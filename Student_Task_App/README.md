@@ -1,5 +1,16 @@
 # student_task_app
 
+
+
+screenshots:
+
+<div style="display: flex; flex-wrap: wrap; gap: 14px;">
+    <img src="image/img_1.jpg" />
+    <img src="image/img_2.jpg" />
+    <img src="image/img_3.jpg" />
+    <img src="image/img_4.jpg" />
+</div>
+
 A new Flutter project.
 
 ## Getting Started
