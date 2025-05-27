@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'auth_service.dart';
 
 class EnrollmentForm extends StatefulWidget {
   final Map<String, dynamic> course;
@@ -23,6 +25,17 @@ class _EnrollmentFormState extends State<EnrollmentForm> {
   bool _isLoading = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Pre-fill user information
+    final user = Provider.of<AuthService>(context, listen: false).currentUser;
+    if (user != null) {
+      _nameController.text = user.name;
+      _emailController.text = user.email;
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
@@ -33,29 +46,45 @@ class _EnrollmentFormState extends State<EnrollmentForm> {
     super.dispose();
   }
 
-  void _handleEnrollment() {
+  Future<void> _handleEnrollment() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      // Simulate enrollment process
-      Future.delayed(const Duration(seconds: 2), () {
+      try {
+        // Process enrollment
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final success = await authService.enrollInCourse(widget.course);
+
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Successfully enrolled in the course!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('You are already enrolled in this course'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to enroll in the course. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
         setState(() {
           _isLoading = false;
         });
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Successfully enrolled in the course!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Close the form
-        Navigator.pop(context);
-      });
+      }
     }
   }
 
@@ -281,4 +310,4 @@ class _EnrollmentFormState extends State<EnrollmentForm> {
       ),
     );
   }
-} 
+}

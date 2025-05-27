@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'home_screen.dart';
 import 'auth_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -27,7 +26,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     super.dispose();
   }
 
-  void _handleRegistration() {
+  Future<void> _handleRegistration() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -35,30 +34,27 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
       try {
         final authService = Provider.of<AuthService>(context, listen: false);
-        final success = authService.registerUser(
+        final success = await authService.registerUser(
           _nameController.text,
           _emailController.text,
           _passwordController.text,
         );
 
+        if (!mounted) return;
         if (success) {
-          // Auto login after successful registration
-          authService.loginUser(
-            _emailController.text,
-            _passwordController.text,
-          );
-
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Registration successful!'),
+              content: Text(
+                  'Registration successful! Please login with your credentials.'),
               backgroundColor: Colors.green,
             ),
           );
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+          // Pop back to login screen
+          Navigator.pop(context);
+
+          // Briefly delay to let the snackbar be visible
+          await Future.delayed(const Duration(seconds: 2));
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -68,16 +64,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           );
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registration failed'),
+          SnackBar(
+            content: Text('Registration failed: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -193,26 +192,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   },
                 ),
                 const SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegistration,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _handleRegistration,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        )
-                      : const Text(
+                        ),
+                        child: const Text(
                           'Register',
                           style: TextStyle(fontSize: 18),
                         ),
+                      ),
+                const SizedBox(height: 10),
+                Text(
+                  'Registration Date: ${DateTime.now().toString()}',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 12,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 20),
                 Row(
@@ -234,4 +236,4 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       ),
     );
   }
-} 
+}

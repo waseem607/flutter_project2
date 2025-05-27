@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -32,10 +32,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       try {
         final authService = Provider.of<AuthService>(context, listen: false);
-        final success = authService.loginUser(
+        final success = await authService.loginUser(
           _emailController.text,
           _passwordController.text,
         );
+
+        if (!mounted) return;
 
         if (success) {
           Navigator.pushReplacement(
@@ -51,16 +53,19 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       } catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Invalid email or password'),
+            content: Text('Login failed. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
       } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
@@ -152,17 +157,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                 ),
                 const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Forgot password feature coming soon!'),
-                      ),
-                    );
-                  },
-                  child: const Text('Forgot Password?'),
-                ),
-                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -187,4 +181,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-} 
+}
